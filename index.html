@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mini IMDB Clone</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-md-8">
+          <form id="search-form">
+            <div class="form-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Search for a movie"
+              />
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+          </form>
+          <hr />
+          <div id="movies" class="row"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Movie info modal -->
+    <div
+      class="modal fade"
+      id="movieModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="movieModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="movieModalLabel"></h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+              onclick="closeModal()"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-4">
+                <img
+                  id="moviePoster"
+                  src=""
+                  alt="Movie poster"
+                  class="img-fluid"
+                />
+              </div>
+              <div class="col-md-8">
+                <p><strong>Title:</strong> <span id="movieTitle"></span></p>
+                <p><strong>Year:</strong> <span id="movieYear"></span></p>
+                <p>
+                  <strong>Director:</strong> <span id="movieDirector"></span>
+                </p>
+                <p><strong>Actors:</strong> <span id="movieActors"></span></p>
+                <p><strong>Plot:</strong> <span id="moviePlot"></span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.querySelector("#search-form");
+      const moviesContainer = document.querySelector("#movies");
+      const modal = document.querySelector("#movieModal");
+
+      function closeModal() {
+        modal.classList.remove("show");
+        modal.style.display = "none";
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const query = event.target.elements[0].value;
+
+        if (query) {
+          const response = await fetch(
+            `https://www.omdbapi.com/?s=${query}&apikey=3a10e60e`
+          );
+          const data = await response.json();
+          console.log(data);
+
+          if (data.Response === "True") {
+            moviesContainer.innerHTML = data.Search.map(
+              (movie) => `
+        <div class="col-md-4 mb-3">
+          <div class="card" data-imdbid="${movie.imdbID}">
+            <img src="${movie.Poster}" class="card-img-top">
+            <div class="card-body">
+              <h5 class="card-title">${movie.Title}</h5>
+              <p class="card-text">${movie.Year}</p>
+            </div>
+          </div>
+        </div>
+      `
+            ).join("");
+          } else {
+            moviesContainer.innerHTML = "<p>No results found</p>";
+          }
+        } else {
+          moviesContainer.innerHTML = "<p>Please enter a search query</p>";
+        }
+      });
+
+      moviesContainer.addEventListener("click", async (event) => {
+        const card = event.target.closest(".card");
+
+        if (card) {
+          const imdbID = card.dataset.imdbid;
+          const response = await fetch(
+            `https://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=3a10e60e`
+          );
+          const data = await response.json();
+          console.log(data);
+
+          modal.querySelector("#movieTitle").textContent = data.Title;
+          modal.querySelector("#movieYear").textContent = data.Year;
+          modal.querySelector("#movieDirector").textContent = data.Director;
+          modal.querySelector("#movieActors").textContent = data.Actors;
+          modal.querySelector("#moviePlot").textContent = data.Plot;
+          modal.querySelector("#moviePoster").setAttribute("src", data.Poster);
+          modal.style.display = "block";
+
+          modal.classList.add("show");
+          modal.style.display = "block";
+        }
+      });
+    </script>
+  </body>
+</html>
